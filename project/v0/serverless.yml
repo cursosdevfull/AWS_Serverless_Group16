@@ -1,0 +1,16 @@
+org: sergiohidalgocaceres
+app: cursosdev
+
+service: testing-initial
+
+provider:
+  name: aws
+  runtime: nodejs24.x
+  architecture: x86_64
+
+functions:
+  greeting:
+    handler: task-greeting.greeting
+
+  get-current-time:
+    handler: task-get-current-time.getCurrentTime
