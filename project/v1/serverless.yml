@@ -1,0 +1,19 @@
+org: sergiohidalgocaceres
+app: cursosdev
+
+service: v1
+
+provider:
+  name: aws
+  runtime: nodejs24.x
+  architecture: x86_64
+
+build:
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: false
+
+functions:
+  create-appointment:
+    handler: src/features/appointment/index.create
