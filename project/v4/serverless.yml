@@ -1,0 +1,97 @@
+org: sergiohidalgocaceres
+app: cursosdev
+
+service: v3
+
+provider:
+  name: aws
+  runtime: nodejs24.x
+  architecture: x86_64
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+          Resource:
+            - !GetAtt SQSAppointmentPE.Arn
+            - !GetAtt SQSAppointmentCO.Arn
+            - !GetAtt SQSAppointmentCL.Arn
+
+build:
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: false
+
+functions:
+  create-appointment:
+    handler: src/features/appointment/index.create
+    environment:
+      SQS_APPOINTMENT_PE: !Ref SQSAppointmentPE
+      SQS_APPOINTMENT_CO: !Ref SQSAppointmentCO
+      SQS_APPOINTMENT_CL: !Ref SQSAppointmentCL
+
+  appointment-pe:
+    handler: src/features/appointment-pe/index.create
+    events:
+      - sqs:
+          arn: !GetAtt SQSAppointmentPE.Arn
+
+  appointment-cl:
+    handler: src/features/appointment-cl/index.create
+    events:
+      - sqs:
+          arn: !GetAtt SQSAppointmentCL.Arn
+
+  appointment-co:
+    handler: src/features/appointment-co/index.create
+    events:
+      - sqs:
+          arn: !GetAtt SQSAppointmentCO.Arn
+
+resources:
+  Resources:
+    Topic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: topic-appointment
+
+    SNSTopicPESubcription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Protocol: sqs
+        Endpoint: !GetAtt SQSAppointmentPE.Arn
+      TopicArn:
+        Ref: Topic
+
+    SNSTopicCOSubcription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Protocol: sqs
+        Endpoint: !GetAtt SQSAppointmentCO.Arn
+      TopicArn:
+        Ref: Topic
+
+    SNSTopicCLSubcription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Protocol: sqs
+        Endpoint: !GetAtt SQSAppointmentCL.Arn
+      TopicArn:
+        Ref: Topic
+
+    SQSAppointmentPE:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: queue-appointment-pe
+
+    SQSAppointmentCO:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: queue-appointment-co
+
+    SQSAppointmentCL:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: queue-appointment-cl

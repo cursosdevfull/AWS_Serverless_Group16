@@ -1,18 +1,15 @@
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { Appointment } from "../../packages/interfaces";
-import { LibLambda, LambdaInvocationType } from "../../../lib/lambda";
+import { LibSqs } from "../../../lib";
 
 export const create = async (event: APIGatewayProxyEvent) => {
   const body = JSON.parse(event.body || "{}") as Appointment;
 
-  const functionName =
-    process.env["LAMBDA_NAME_" + body.countryIso.toUpperCase()] || "";
+  const urlSqs =
+    process.env["SQS_APPOINTMENT_" + body.countryIso.toUpperCase()] || "";
 
-  const libLambda = new LibLambda();
-  const response = await libLambda.invokeLambda(
-    functionName,
-    LambdaInvocationType.RequestResponse,
-  );
+  const libSqs = new LibSqs();
+  const response = await libSqs.sendMessage(urlSqs, JSON.stringify(body));
 
   return {
     statusCode: 200,

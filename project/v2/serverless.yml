@@ -7,6 +7,13 @@ provider:
   name: aws
   runtime: nodejs24.x
   architecture: x86_64
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+          Resource: "arn:aws:lambda:*:*:function:*"
 
 build:
   esbuild:
@@ -21,7 +28,7 @@ functions:
       LAMBDA_NAME_PE: !Ref AppointmentDashpeLambdaFunction
       LAMBDA_NAME_CL: !Ref AppointmentDashclLambdaFunction
       LAMBDA_NAME_CO: !Ref AppointmentDashcoLambdaFunction
-      LAMBDA_NAME_MX: !Ref AppointmentDashmxLambdaFunction
+      # LAMBDA_NAME_MX: !Ref AppointmentDashmxLambdaFunction
 
   appointment-pe:
     handler: src/features/appointment-pe/index.create
@@ -32,38 +39,38 @@ functions:
   appointment-co:
     handler: src/features/appointment-co/index.create
 
-  appointment-mx:
-    handler: src/features/appointment-mx/index.create
+  # appointment-mx:
+  #   handler: src/features/appointment-mx/index.create
 
-resources:
-  Resources:
-    AppointmentEC:
-      Type: AWS::Lambda::Function
-      Properties:
-        Runtime: nodejs24.x
-        Handler: index.handler
-        Code:
-          ZipFile: |
-            exports.handler = async function(event) {
-              console.log("Received event EC:", JSON.stringify(event, null, 2));
-            };
-        TracingConfig:
-          Mode: Active
-        Role: arn:aws:iam::282865065290:role/service-role/aws01-lambda-insert-role-5twq9qa3
+# resources:
+#   Resources:
+#     AppointmentEC:
+#       Type: AWS::Lambda::Function
+#       Properties:
+#         Runtime: nodejs24.x
+#         Handler: index.handler
+#         Code:
+#           ZipFile: |
+#             exports.handler = async function(event) {
+#               console.log("Received event EC:", JSON.stringify(event, null, 2));
+#             };
+#         TracingConfig:
+#           Mode: Active
+#         Role: arn:aws:iam::282865065290:role/service-role/aws01-lambda-insert-role-5twq9qa3
 
-    AppointmentPA:
-      Type: AWS::Lambda::Function
-      Properties:
-        Runtime: nodejs24.x
-        Handler: index.handler
-        Code:
-          ZipFile: |
-            exports.handler = async function(event) {
-              console.log("Received event PA:", JSON.stringify(event, null, 2));
-            };
-        TracingConfig:
-          Mode: Active
-        Environment:
-          Variables:
-            LAMBDA_NAME_EC: !Ref AppointmentEC
-        Role: arn:aws:iam::282865065290:role/service-role/aws01-lambda-insert-role-5twq9qa3
+#     AppointmentPA:
+#       Type: AWS::Lambda::Function
+#       Properties:
+#         Runtime: nodejs24.x
+#         Handler: index.handler
+#         Code:
+#           ZipFile: |
+#             exports.handler = async function(event) {
+#               console.log("Received event PA:", JSON.stringify(event, null, 2));
+#             };
+#         TracingConfig:
+#           Mode: Active
+#         Environment:
+#           Variables:
+#             LAMBDA_NAME_EC: !Ref AppointmentEC
+#         Role: arn:aws:iam::282865065290:role/service-role/aws01-lambda-insert-role-5twq9qa3
