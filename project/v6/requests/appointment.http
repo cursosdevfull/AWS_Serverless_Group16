@@ -1,0 +1,9 @@
+### Book appointment
+post https://yq01xqnt3j.execute-api.us-east-1.amazonaws.com/dev/appointment
+Content-Type: application/json
+
+{
+  "slotId": "slot-1",
+  "patientId": "patient-1",
+  "countryISO": "CO"
+}

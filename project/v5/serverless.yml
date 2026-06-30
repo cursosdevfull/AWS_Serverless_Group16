@@ -1,7 +1,7 @@
 org: sergiohidalgocaceres
 app: cursosdev
 
-service: appointment-v4
+service: appointment-v5
 
 provider:
   name: aws
@@ -15,6 +15,13 @@ provider:
             - sns:Publish
           Resource:
             - !Ref Topic
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+          Resource:
+            - !GetAtt SQSAppointmentPE.Arn
+            - !GetAtt SQSAppointmentCO.Arn
+            - !GetAtt SQSAppointmentCL.Arn
 
 build:
   esbuild:
@@ -32,17 +39,41 @@ functions:
           path: /appointment
           method: post
 
+  appointment-enrichment-pe:
+    handler: src/features/appointment-enrichment-pe/index.enrichment
+    environment:
+      SQS_URL: !Ref SQSAppointmentPE
+    events:
+      - sqs:
+          arn: !GetAtt SQSAppointmentEnrichmentPE.Arn
+
   appointment-pe:
     handler: src/features/appointment-pe/index.create
     events:
       - sqs:
           arn: !GetAtt SQSAppointmentPE.Arn
 
+  appointment-enrichment-cl:
+    handler: src/features/appointment-enrichment-cl/index.enrichment
+    environment:
+      SQS_URL: !Ref SQSAppointmentCL
+    events:
+      - sqs:
+          arn: !GetAtt SQSAppointmentEnrichmentCL.Arn
+
   appointment-cl:
     handler: src/features/appointment-cl/index.create
     events:
       - sqs:
           arn: !GetAtt SQSAppointmentCL.Arn
+
+  appointment-enrichment-co:
+    handler: src/features/appointment-enrichment-co/index.enrichment
+    environment:
+      SQS_URL: !Ref SQSAppointmentCO
+    events:
+      - sqs:
+          arn: !GetAtt SQSAppointmentEnrichmentCO.Arn
 
   appointment-co:
     handler: src/features/appointment-co/index.create
@@ -61,7 +92,7 @@ resources:
       Type: AWS::SNS::Subscription
       Properties:
         Protocol: sqs
-        Endpoint: !GetAtt SQSAppointmentPE.Arn
+        Endpoint: !GetAtt SQSAppointmentEnrichmentPE.Arn
         TopicArn:
           Ref: Topic
         RawMessageDelivery: true
@@ -74,7 +105,7 @@ resources:
       Type: AWS::SNS::Subscription
       Properties:
         Protocol: sqs
-        Endpoint: !GetAtt SQSAppointmentCO.Arn
+        Endpoint: !GetAtt SQSAppointmentEnrichmentCO.Arn
         TopicArn:
           Ref: Topic
         RawMessageDelivery: true
@@ -87,7 +118,7 @@ resources:
       Type: AWS::SNS::Subscription
       Properties:
         Protocol: sqs
-        Endpoint: !GetAtt SQSAppointmentCL.Arn
+        Endpoint: !GetAtt SQSAppointmentEnrichmentCL.Arn
         TopicArn:
           Ref: Topic
         RawMessageDelivery: true
@@ -101,59 +132,74 @@ resources:
       Properties:
         QueueName: queue-appointment-pe
 
-    PolicySQSAppointmentPE:
-      Type: AWS::SQS::QueuePolicy
-      Properties:
-        Queues:
-          - !Ref SQSAppointmentPE
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Principal: "*"
-              Resource: !GetAtt SQSAppointmentPE.Arn
-              Action: sqs:SendMessage
-              Condition:
-                ArnEquals:
-                  aws:SourceArn: !Ref Topic
-
     SQSAppointmentCO:
       Type: AWS::SQS::Queue
       Properties:
         QueueName: queue-appointment-co
-
-    PolicySQSAppointmentCO:
-      Type: AWS::SQS::QueuePolicy
-      Properties:
-        Queues:
-          - !Ref SQSAppointmentCO
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Principal: "*"
-              Resource: !GetAtt SQSAppointmentCO.Arn
-              Action: sqs:SendMessage
-              Condition:
-                ArnEquals:
-                  aws:SourceArn: !Ref Topic
 
     SQSAppointmentCL:
       Type: AWS::SQS::Queue
       Properties:
         QueueName: queue-appointment-cl
 
-    PolicySQSAppointmentCL:
+    SQSAppointmentEnrichmentPE:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: queue-appointment-enrichment-pe
+
+    PolicySQSAppointmentEnrichmentPE:
       Type: AWS::SQS::QueuePolicy
       Properties:
         Queues:
-          - !Ref SQSAppointmentCL
+          - !Ref SQSAppointmentEnrichmentPE
         PolicyDocument:
           Version: "2012-10-17"
           Statement:
             - Effect: Allow
               Principal: "*"
-              Resource: !GetAtt SQSAppointmentCL.Arn
+              Resource: !GetAtt SQSAppointmentEnrichmentPE.Arn
+              Action: sqs:SendMessage
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: !Ref Topic
+
+    SQSAppointmentEnrichmentCO:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: queue-appointment-enrichment-co
+
+    PolicySQSAppointmentEnrichmentCO:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - !Ref SQSAppointmentEnrichmentCO
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal: "*"
+              Resource: !GetAtt SQSAppointmentEnrichmentCO.Arn
+              Action: sqs:SendMessage
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: !Ref Topic
+
+    SQSAppointmentEnrichmentCL:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: queue-appointment-enrichment-cl
+
+    PolicySQSAppointmentEnrichmentCL:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - !Ref SQSAppointmentEnrichmentCL
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal: "*"
+              Resource: !GetAtt SQSAppointmentEnrichmentCL.Arn
               Action: sqs:SendMessage
               Condition:
                 ArnEquals:
